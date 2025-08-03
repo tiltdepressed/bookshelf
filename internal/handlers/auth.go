@@ -159,15 +159,7 @@ func (h *AuthHandler) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
-	claims, ok := r.Context().Value("user").(*utils.Claims)
-	if !ok {
-		utils.JSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "User information not found in context",
-		})
-		return
-	}
-
-	users, err := h.authService.GetAllUsers(claims.UserID)
+	users, err := h.authService.GetAllUsers()
 	if err != nil {
 		h.handleServiceError(w, err)
 		return
@@ -193,6 +185,13 @@ func (h *AuthHandler) UpdateUserRoleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if claims.UserID == targetUserID {
+		utils.JSONResponse(w, http.StatusBadRequest, map[string]string{
+			"error": "Cannot change your own role",
+		})
+		return
+	}
+
 	var input struct {
 		NewRole string `json:"new_role"`
 	}
@@ -204,7 +203,7 @@ func (h *AuthHandler) UpdateUserRoleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	updatedUser, err := h.authService.UpdateUserRole(claims.UserID, targetUserID, input.NewRole)
+	updatedUser, err := h.authService.UpdateUserRole(targetUserID, input.NewRole)
 	if err != nil {
 		h.handleServiceError(w, err)
 		return
@@ -214,14 +213,6 @@ func (h *AuthHandler) UpdateUserRoleHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *AuthHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	claims, ok := r.Context().Value("user").(*utils.Claims)
-	if !ok {
-		utils.JSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "User information not found in context",
-		})
-		return
-	}
-
 	targetUserID := chi.URLParam(r, "id")
 	if _, err := strconv.ParseUint(targetUserID, 10, 64); err != nil {
 		utils.JSONResponse(w, http.StatusBadRequest, map[string]string{
@@ -236,7 +227,7 @@ func (h *AuthHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err := h.authService.DeleteUser(claims.UserID, targetUserID)
+	err := h.authService.DeleteUser(targetUserID)
 	if err != nil {
 		h.handleServiceError(w, err)
 		return

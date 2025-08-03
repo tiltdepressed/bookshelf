@@ -34,6 +34,10 @@ func main() {
 	authService := service.NewAuthService(authRepo)
 	authHandler := handlers.NewAuthHandler(authService)
 
+	bookRepo := repository.NewBookRepository(database)
+	bookService := service.NewBookService(bookRepo)
+	bookHandler := handlers.NewBookHandler(bookService)
+
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
@@ -42,6 +46,9 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Post("/api/auth/register", authHandler.RegisterHandler)
 		r.Post("/api/auth/login", authHandler.LoginHandler)
+
+		r.Get("/api/books", bookHandler.GetAllBooksHandler)
+		r.Get("/api/books/{id}", bookHandler.GetBookByIDHandler)
 	})
 
 	// Защищенные роуты (для всех авторизованных)
@@ -59,6 +66,10 @@ func main() {
 		r.Get("/api/users", authHandler.GetAllUsersHandler)                // Все пользователи
 		r.Patch("/api/users/{id}/role", authHandler.UpdateUserRoleHandler) // Изменение роли
 		r.Delete("/api/users/{id}", authHandler.DeleteUserHandler)         // Удаление пользователя
+
+		r.Post("/api/books", bookHandler.CreateBookHandler)
+		r.Patch("/api/books/{id}", bookHandler.UpdateBookHandler)
+		r.Delete("/api/books/{id}", bookHandler.DeleteBookHandler)
 	})
 
 	port := os.Getenv("PORT")

@@ -23,9 +23,9 @@ type AuthService interface {
 	// Полудаминский метод: простые смертные могут смотреть только свой профиль, админ - любые
 	GetUser(currentUserID string, targetUserID string) (models.User, error)
 	// Админские методы
-	GetAllUsers(currentUserID string) ([]models.User, error)
-	UpdateUserRole(currentUserID, targetUserID, newRole string) (models.User, error)
-	DeleteUser(currentUserID string, targetUserID string) error
+	GetAllUsers() ([]models.User, error)
+	UpdateUserRole(targetUserID, newRole string) (models.User, error)
+	DeleteUser(targetUserID string) error
 }
 
 type authService struct {
@@ -109,16 +109,7 @@ func (s *authService) GetUser(currentUserID string, targetUserID string) (models
 	return user, nil
 }
 
-func (s *authService) GetAllUsers(currentUserID string) ([]models.User, error) {
-	ctx := s.getUserContext(currentUserID)
-	if ctx.err != nil {
-		return []models.User{}, ctx.err
-	}
-
-	if ctx.user.Role != "admin" {
-		return []models.User{}, errors.New("access denied: admin privileges required")
-	}
-
+func (s *authService) GetAllUsers() ([]models.User, error) {
 	users, err := s.repo.GetAllUsers()
 	if err != nil {
 		return []models.User{}, fmt.Errorf("failed to get users: %w", err)
@@ -131,27 +122,14 @@ func (s *authService) GetAllUsers(currentUserID string) ([]models.User, error) {
 	return users, nil
 }
 
-func (s *authService) UpdateUserRole(currentUserID, targetUserID, newRole string) (models.User, error) {
+func (s *authService) UpdateUserRole(targetUserID, newRole string) (models.User, error) {
 	if newRole != "admin" && newRole != "user" {
 		return models.User{}, errors.New("invalid role, must be 'admin' or 'user'")
-	}
-
-	ctx := s.getUserContext(currentUserID)
-	if ctx.err != nil {
-		return models.User{}, ctx.err
-	}
-
-	if ctx.user.Role != "admin" {
-		return models.User{}, errors.New("access denied: admin privileges required")
 	}
 
 	user, err := s.repo.GetUserByID(targetUserID)
 	if err != nil {
 		return models.User{}, err
-	}
-
-	if currentUserID == targetUserID {
-		return models.User{}, errors.New("cannot change own role")
 	}
 
 	user.Role = newRole
@@ -163,15 +141,6 @@ func (s *authService) UpdateUserRole(currentUserID, targetUserID, newRole string
 	return user, nil
 }
 
-func (s *authService) DeleteUser(currentUserID string, targetUserID string) error {
-	ctx := s.getUserContext(currentUserID)
-	if ctx.err != nil {
-		return ctx.err
-	}
-
-	if ctx.user.Role != "admin" {
-		return errors.New("access denied: admin privileges required")
-	}
-
+func (s *authService) DeleteUser(targetUserID string) error {
 	return s.repo.DeleteUser(targetUserID)
 }

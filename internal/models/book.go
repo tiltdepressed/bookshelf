@@ -8,6 +8,6 @@ type Book struct {
 	Title       string  `json:"title" gorm:"not null"`
 	Author      string  `json:"author" gorm:"not null"`
 	Genre       string  `json:"genre" gorm:"not null"`
-	Description string  `json:"description"`
+	Description string  `json:"description" gorm:"not null"`
 	Price       float64 `json:"price" gorm:"not null"`
 }
