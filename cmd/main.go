@@ -38,38 +38,48 @@ func main() {
 	bookService := service.NewBookService(bookRepo)
 	bookHandler := handlers.NewBookHandler(bookService)
 
+	favRepo := repository.NewFavouriteRepository(database)
+	favService := service.NewFavouriteRepository(favRepo)
+	favHandler := handlers.NewFavouriteService(favService)
+
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
 
 	// Публичные роуты
 	r.Group(func(r chi.Router) {
-		r.Post("/api/auth/register", authHandler.RegisterHandler)
-		r.Post("/api/auth/login", authHandler.LoginHandler)
+		r.Post("/auth/register", authHandler.RegisterHandler)
+		r.Post("/auth/login", authHandler.LoginHandler)
 
-		r.Get("/api/books", bookHandler.GetAllBooksHandler)
-		r.Get("/api/books/{id}", bookHandler.GetBookByIDHandler)
+		r.Get("/books", bookHandler.GetAllBooksHandler)
+		r.Get("/books/{id}", bookHandler.GetBookByIDHandler)
+
+		r.Get("/books/genres", bookHandler.GetAllGenresHandler)
 	})
 
 	// Защищенные роуты (для всех авторизованных)
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTAuthMiddleware)
 
-		r.Get("/api/users/me", authHandler.GetProfileHandler) // Мой профиль
-		r.Get("/api/users/{id}", authHandler.GetUserHandler)  // Профиль другого пользователя
+		r.Get("/users/me", authHandler.GetProfileHandler) // Мой профиль
+		r.Get("/users/{id}", authHandler.GetUserHandler)  // Профиль другого пользователя
+
+		r.Get("/favourites/me", favHandler.GetFavourites)
+		r.Post("/favourites/{bookID}", favHandler.AddFavouriteHandler)
+		r.Delete("/favourites/{bookID}", favHandler.RemoveFavourite)
 	})
 
 	// Админские роуты (только для админов)
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTAuthMiddleware, middleware.AdminOnlyMiddleware)
 
-		r.Get("/api/users", authHandler.GetAllUsersHandler)                // Все пользователи
-		r.Patch("/api/users/{id}/role", authHandler.UpdateUserRoleHandler) // Изменение роли
-		r.Delete("/api/users/{id}", authHandler.DeleteUserHandler)         // Удаление пользователя
+		r.Get("/users", authHandler.GetAllUsersHandler)                // Все пользователи
+		r.Patch("/users/{id}/role", authHandler.UpdateUserRoleHandler) // Изменение роли
+		r.Delete("/users/{id}", authHandler.DeleteUserHandler)         // Удаление пользователя
 
-		r.Post("/api/books", bookHandler.CreateBookHandler)
-		r.Patch("/api/books/{id}", bookHandler.UpdateBookHandler)
-		r.Delete("/api/books/{id}", bookHandler.DeleteBookHandler)
+		r.Post("/books", bookHandler.CreateBookHandler)
+		r.Patch("/books/{id}", bookHandler.UpdateBookHandler)
+		r.Delete("/books/{id}", bookHandler.DeleteBookHandler)
 	})
 
 	port := os.Getenv("PORT")

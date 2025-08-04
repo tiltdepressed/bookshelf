@@ -13,10 +13,19 @@ type BookRequest struct {
 	Price       float64 `json:"price" binding:"required,gt=0"`
 }
 
+type BookBrief struct {
+	ID     uint    `json:"id"`
+	Title  string  `json:"title"`
+	Author string  `json:"author"`
+	Genre  string  `json:"genre"`
+	Price  float64 `json:"price"`
+}
+
 type BookService interface {
 	CreateBook(book BookRequest) (models.Book, error)
 	GetBookByID(id string) (models.Book, error)
-	GetAllBooks() ([]models.Book, error)
+	GetAllBooks(genre string, page, limit int) ([]BookBrief, int64, error)
+	GetAllGenres() ([]string, error)
 	UpdateBook(id string, update BookRequest) (models.Book, error)
 	DeleteBook(id string) error
 }
@@ -50,12 +59,28 @@ func (s *bookService) GetBookByID(id string) (models.Book, error) {
 	return book, err
 }
 
-func (s *bookService) GetAllBooks() ([]models.Book, error) {
-	books, err := s.repo.GetAllBooks()
+func (s *bookService) GetAllBooks(genre string, page, limit int) ([]BookBrief, int64, error) {
+	books, total, err := s.repo.GetAllBooks(genre, page, limit)
 	if err != nil {
-		return []models.Book{}, err
+		return nil, 0, err
 	}
-	return books, nil
+
+	briefs := make([]BookBrief, len(books))
+	for i, book := range books {
+		briefs[i] = BookBrief{
+			ID:     book.ID,
+			Title:  book.Title,
+			Author: book.Author,
+			Genre:  book.Genre,
+			Price:  book.Price,
+		}
+	}
+
+	return briefs, total, nil
+}
+
+func (s *bookService) GetAllGenres() ([]string, error) {
+	return s.repo.GetAllGenres()
 }
 
 func (s *bookService) UpdateBook(id string, update BookRequest) (models.Book, error) {

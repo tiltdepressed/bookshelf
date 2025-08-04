@@ -5,7 +5,9 @@ import (
 	"bookshelf/pkg/utils"
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -72,14 +74,38 @@ func (h *BookHandler) GetBookByIDHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *BookHandler) GetAllBooksHandler(w http.ResponseWriter, r *http.Request) {
-	books, err := h.bookService.GetAllBooks()
+	genre := r.URL.Query().Get("genre")
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+
+	books, total, err := h.bookService.GetAllBooks(genre, page, limit)
 	if err != nil {
 		utils.JSONResponse(w, http.StatusInternalServerError, map[string]string{
 			"error": "Couldn't find books",
 		})
 		return
 	}
-	utils.JSONResponse(w, http.StatusOK, books)
+	utils.JSONResponse(w, http.StatusOK, map[string]any{
+		"data": books,
+		"meta": map[string]any{
+			"total":      total,
+			"page":       page,
+			"limit":      limit,
+			"totalPages": int(math.Ceil(float64(total) / float64(limit))),
+		},
+	})
+}
+
+func (h *BookHandler) GetAllGenresHandler(w http.ResponseWriter, r *http.Request) {
+	genres, err := h.bookService.GetAllGenres()
+	if err != nil {
+		utils.JSONResponse(w, http.StatusInternalServerError, map[string]string{
+			"error": "Couldn't get genres",
+		})
+		return
+	}
+
+	utils.JSONResponse(w, http.StatusOK, genres)
 }
 
 func (h *BookHandler) UpdateBookHandler(w http.ResponseWriter, r *http.Request) {
