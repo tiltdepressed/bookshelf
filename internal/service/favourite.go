@@ -12,7 +12,7 @@ type favouriteService struct {
 	repo repository.FavouriteRepository
 }
 
-func NewFavouriteRepository(repo repository.FavouriteRepository) FavouriteService {
+func NewFavouriteService(repo repository.FavouriteRepository) FavouriteService {
 	return &favouriteService{repo: repo}
 }
 

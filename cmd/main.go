@@ -3,16 +3,17 @@ package main
 import (
 	"bookshelf/internal/config/db"
 	"bookshelf/internal/handlers"
-	"bookshelf/internal/middleware" // Локальный middleware
+	"bookshelf/internal/middleware"
 	"bookshelf/internal/repository"
 	"bookshelf/internal/service"
+	"bookshelf/pkg/cache"
 	"bookshelf/pkg/utils"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/go-chi/chi/v5"
-	chimiddleware "github.com/go-chi/chi/v5/middleware" // Псевдоним для избежания конфликта
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 )
 
@@ -27,6 +28,11 @@ func main() {
 		log.Fatalf("Could not connect to db: %s", err.Error())
 	}
 
+	redisCache, err := cache.NewRedisCache(os.Getenv("REDIS_URL"))
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %s", err.Error())
+	}
+
 	utils.InitJWT()
 
 	// Инициализация слоёв
@@ -35,12 +41,12 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService)
 
 	bookRepo := repository.NewBookRepository(database)
-	bookService := service.NewBookService(bookRepo)
+	bookService := service.NewBookService(bookRepo, redisCache)
 	bookHandler := handlers.NewBookHandler(bookService)
 
 	favRepo := repository.NewFavouriteRepository(database)
-	favService := service.NewFavouriteRepository(favRepo)
-	favHandler := handlers.NewFavouriteService(favService)
+	favService := service.NewFavouriteService(favRepo)
+	favHandler := handlers.NewFavouriteHandler(favService)
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
@@ -73,9 +79,9 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTAuthMiddleware, middleware.AdminOnlyMiddleware)
 
-		r.Get("/users", authHandler.GetAllUsersHandler)                // Все пользователи
-		r.Patch("/users/{id}/role", authHandler.UpdateUserRoleHandler) // Изменение роли
-		r.Delete("/users/{id}", authHandler.DeleteUserHandler)         // Удаление пользователя
+		r.Get("/users", authHandler.GetAllUsersHandler)
+		r.Patch("/users/{id}/role", authHandler.UpdateUserRoleHandler)
+		r.Delete("/users/{id}", authHandler.DeleteUserHandler)
 
 		r.Post("/books", bookHandler.CreateBookHandler)
 		r.Patch("/books/{id}", bookHandler.UpdateBookHandler)

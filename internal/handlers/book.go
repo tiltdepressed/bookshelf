@@ -78,6 +78,14 @@ func (h *BookHandler) GetAllBooksHandler(w http.ResponseWriter, r *http.Request)
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
 	books, total, err := h.bookService.GetAllBooks(genre, page, limit)
 	if err != nil {
 		utils.JSONResponse(w, http.StatusInternalServerError, map[string]string{

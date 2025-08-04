@@ -13,7 +13,7 @@ type FavouriteHandler struct {
 	favService service.FavouriteService
 }
 
-func NewFavouriteService(favService service.FavouriteService) *FavouriteHandler {
+func NewFavouriteHandler(favService service.FavouriteService) *FavouriteHandler {
 	return &FavouriteHandler{favService: favService}
 }
 
@@ -57,8 +57,8 @@ func (h *FavouriteHandler) GetFavourites(w http.ResponseWriter, r *http.Request)
 	if page < 1 {
 		page = 1
 	}
-	if limit < 1 || limit > 50 {
-		limit = 15
+	if limit < 1 || limit > 100 {
+		limit = 10
 	}
 
 	books, total, err := h.favService.GetFavourites(uint(userID), page, limit)
@@ -69,7 +69,7 @@ func (h *FavouriteHandler) GetFavourites(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"data": books,
 		"meta": map[string]any{
 			"total":      total,

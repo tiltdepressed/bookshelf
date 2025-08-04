@@ -22,7 +22,7 @@ func NewFavouriteRepository(db *gorm.DB) FavouriteRepository {
 
 func (r *favouriteRepo) AddFavourite(userID, bookID uint) error {
 	return r.db.Exec(`
-		INSERT INTO user_favourites (user_id, book_id)
+		INSERT INTO favourite_books (user_id, book_id)
 		VALUES (?, ?)
 		ON CONFLICT DO NOTHING
 	`, userID, bookID).Error
@@ -30,7 +30,7 @@ func (r *favouriteRepo) AddFavourite(userID, bookID uint) error {
 
 func (r *favouriteRepo) RemoveFavourite(userID, bookID uint) error {
 	return r.db.Exec(`
-		DELETE FROM user_favourites
+		DELETE FROM favourite_books
 		WHERE user_id = ? AND book_id = ?
 	`, userID, bookID).Error
 }
@@ -42,8 +42,8 @@ func (r *favouriteRepo) GetFavourites(userID uint, page, limit int) ([]models.Bo
 	offset := (page - 1) * limit
 
 	err := r.db.Model(&models.Book{}).
-		Joins("JOIN user_favourites ON books.id = user_favourites.book_id").
-		Where("user_favourites.user_id = ?", userID).
+		Joins("JOIN favourite_books ON books.id = favourite_books.book_id").
+		Where("favourite_books.user_id = ?", userID).
 		Count(&total).
 		Offset(offset).
 		Limit(limit).
