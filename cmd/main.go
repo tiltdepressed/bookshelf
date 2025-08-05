@@ -1,6 +1,18 @@
+// @title BookShelf API
+// @version 1.0
+// @description API для управления каталогом книг с авторизацией, избранным и админ-панелью
+// @host localhost:8080
+// @BasePath /
+// @schemes http
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token
 package main
 
 import (
+	_ "bookshelf/docs"
 	"bookshelf/internal/config/db"
 	"bookshelf/internal/handlers"
 	"bookshelf/internal/middleware"
@@ -15,6 +27,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -67,10 +80,10 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTAuthMiddleware)
 
-		r.Get("/users/me", authHandler.GetProfileHandler) // Мой профиль
-		r.Get("/users/{id}", authHandler.GetUserHandler)  // Профиль другого пользователя
+		r.Get("/users/me", authHandler.GetProfileHandler)
+		r.Get("/users/{id}", authHandler.GetUserHandler)
 
-		r.Get("/favourites/me", favHandler.GetFavourites)
+		r.Get("/favourites", favHandler.GetFavourites)
 		r.Post("/favourites/{bookID}", favHandler.AddFavouriteHandler)
 		r.Delete("/favourites/{bookID}", favHandler.RemoveFavourite)
 	})
@@ -80,13 +93,18 @@ func main() {
 		r.Use(middleware.JWTAuthMiddleware, middleware.AdminOnlyMiddleware)
 
 		r.Get("/users", authHandler.GetAllUsersHandler)
-		r.Patch("/users/{id}/role", authHandler.UpdateUserRoleHandler)
+		r.Put("/users/{id}/role", authHandler.UpdateUserRoleHandler)
 		r.Delete("/users/{id}", authHandler.DeleteUserHandler)
 
 		r.Post("/books", bookHandler.CreateBookHandler)
-		r.Patch("/books/{id}", bookHandler.UpdateBookHandler)
+		r.Put("/books/{id}", bookHandler.UpdateBookHandler)
 		r.Delete("/books/{id}", bookHandler.DeleteBookHandler)
 	})
+
+	// Swagger документация
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -95,6 +113,7 @@ func main() {
 
 	log.Printf("Server started and listening on port %s", port)
 	log.Printf("Try: http://localhost:%s", port)
+	log.Printf("Swagger UI: http://localhost:%s/swagger/index.html", port)
 
 	err = http.ListenAndServe(":"+port, r)
 	if err != nil {

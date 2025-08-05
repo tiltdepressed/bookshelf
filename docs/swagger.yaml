@@ -1,0 +1,674 @@
+basePath: /
+definitions:
+  bookshelf_internal_service.BookRequest:
+    properties:
+      author:
+        type: string
+      description:
+        type: string
+      genre:
+        type: string
+      price:
+        type: number
+      title:
+        type: string
+    required:
+    - author
+    - description
+    - genre
+    - price
+    - title
+    type: object
+  internal_handlers.BookBriefResponse:
+    properties:
+      author:
+        example: Alan A. A. Donovan
+        type: string
+      genre:
+        example: Programming
+        type: string
+      id:
+        example: 1
+        type: integer
+      price:
+        example: 49.99
+        type: number
+      title:
+        example: The Go Programming Language
+        type: string
+    type: object
+  internal_handlers.BookResponse:
+    properties:
+      author:
+        example: Alan A. A. Donovan
+        type: string
+      description:
+        example: Definitive guide to Go programming
+        type: string
+      genre:
+        example: Programming
+        type: string
+      id:
+        example: 1
+        type: integer
+      price:
+        example: 49.99
+        type: number
+      title:
+        example: The Go Programming Language
+        type: string
+    type: object
+  internal_handlers.ErrorResponse:
+    properties:
+      error:
+        example: error message
+        type: string
+    type: object
+  internal_handlers.LoginRequest:
+    properties:
+      password:
+        example: user_password
+        type: string
+      username:
+        example: existing_user
+        type: string
+    type: object
+  internal_handlers.LoginResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  internal_handlers.PaginatedBooksResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_handlers.BookBriefResponse'
+        type: array
+      meta:
+        properties:
+          limit:
+            example: 10
+            type: integer
+          page:
+            example: 1
+            type: integer
+          total:
+            example: 100
+            type: integer
+          totalPages:
+            example: 10
+            type: integer
+        type: object
+    type: object
+  internal_handlers.RegisterRequest:
+    properties:
+      password:
+        example: strong_password
+        type: string
+      username:
+        example: new_user
+        type: string
+    type: object
+  internal_handlers.UpdateRoleRequest:
+    properties:
+      new_role:
+        example: admin
+        type: string
+    type: object
+  internal_handlers.UserResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      role:
+        example: user
+        type: string
+      username:
+        example: john_doe
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для управления каталогом книг с авторизацией, избранным и админ-панелью
+  title: BookShelf API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Вход пользователя в систему и получение токена
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      summary: Аутентификация пользователя
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Создание нового аккаунта пользователя
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - Auth
+  /books:
+    get:
+      description: Получение списка книг с возможностью фильтрации по жанру и пагинацией
+      parameters:
+      - description: Фильтр по жанру
+        in: query
+        name: genre
+        type: string
+      - default: 1
+        description: Номер страницы (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество книг на странице (по умолчанию 10, максимум 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.PaginatedBooksResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      summary: Получение списка книг
+      tags:
+      - Books
+    post:
+      consumes:
+      - application/json
+      description: Создание новой книги в системе
+      parameters:
+      - description: Данные книги
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/bookshelf_internal_service.BookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handlers.BookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Создание новой книги
+      tags:
+      - Books
+  /books/{id}:
+    delete:
+      description: Удаление книги из системы
+      parameters:
+      - description: ID книги
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление книги
+      tags:
+      - Books
+    get:
+      description: Получение информации о книге по её идентификатору
+      parameters:
+      - description: ID книги
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.BookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      summary: Получение книги по ID
+      tags:
+      - Books
+    put:
+      consumes:
+      - application/json
+      description: Обновление информации о существующей книге
+      parameters:
+      - description: ID книги
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные книги
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/bookshelf_internal_service.BookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.BookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление информации о книге
+      tags:
+      - Books
+  /books/genres:
+    get:
+      description: Получение списка всех доступных жанров книг
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      summary: Получение списка жанров
+      tags:
+      - Books
+  /favourites:
+    get:
+      description: Возвращает список избранных книг для текущего пользователя с пагинацией
+      parameters:
+      - default: 1
+        description: Номер страницы (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество книг на странице (по умолчанию 10, максимум 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.PaginatedBooksResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение списка избранных книг
+      tags:
+      - Favourites
+  /favourites/{bookID}:
+    delete:
+      description: Удаляет книгу из списка избранных для текущего пользователя
+      parameters:
+      - description: ID книги
+        in: path
+        name: bookID
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление книги из избранного
+      tags:
+      - Favourites
+    post:
+      description: Добавляет книгу в список избранных для текущего пользователя
+      parameters:
+      - description: ID книги
+        in: path
+        name: bookID
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Добавление книги в избранное
+      tags:
+      - Favourites
+  /users:
+    get:
+      description: Получение списка всех пользователей (доступно администраторам)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handlers.UserResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение списка всех пользователей
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      description: Удаление пользователя (доступно администраторам)
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление пользователя
+      tags:
+      - Users
+    get:
+      description: Получение информации о пользователе по ID (доступно администраторам)
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение информации о пользователе
+      tags:
+      - Users
+  /users/{id}/role:
+    put:
+      consumes:
+      - application/json
+      description: Изменение роли пользователя (доступно администраторам)
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Новая роль
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handlers.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Изменение роли пользователя
+      tags:
+      - Users
+  /users/me:
+    get:
+      description: Получение информации о текущем аутентифицированном пользователе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение профиля текущего пользователя
+      tags:
+      - Users
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

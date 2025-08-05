@@ -4,10 +4,10 @@ package models
 import "gorm.io/gorm"
 
 type Book struct {
-	gorm.Model
-	Title       string  `json:"title" gorm:"not null"`
-	Author      string  `json:"author" gorm:"not null"`
-	Genre       string  `json:"genre" gorm:"not null"`
-	Description string  `json:"description" gorm:"not null"`
-	Price       float64 `json:"price" gorm:"not null"`
+	gorm.Model  `swaggerignore:"true"`
+	Title       string  `json:"title" gorm:"not null" example:"The Go Programming Language"`
+	Author      string  `json:"author" gorm:"not null" example:"Alan A. A. Donovan"`
+	Genre       string  `json:"genre" gorm:"not null" example:"Programming"`
+	Description string  `json:"description" gorm:"not null" example:"Definitive guide to Go programming"`
+	Price       float64 `json:"price" gorm:"not null" example:"49.99"`
 }

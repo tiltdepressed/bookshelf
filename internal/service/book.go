@@ -113,7 +113,19 @@ func (s *bookService) GetAllBooks(genre string, page, limit int) ([]BookBrief, i
 }
 
 func (s *bookService) GetAllGenres() ([]string, error) {
-	return s.repo.GetAllGenres()
+	cacheKey := "genres:all"
+
+	var genres []string
+	if s.cache.Get(cacheKey, &genres) {
+		return genres, nil
+	}
+
+	genres, err := s.repo.GetAllGenres()
+	if err != nil {
+		return nil, err
+	}
+	s.cache.Set(cacheKey, genres, time.Hour)
+	return genres, nil
 }
 
 func (s *bookService) UpdateBook(id string, update BookRequest) (models.Book, error) {
@@ -133,6 +145,10 @@ func (s *bookService) UpdateBook(id string, update BookRequest) (models.Book, er
 
 	s.cache.InvalidatePattern("books:*")
 	s.cache.Delete(fmt.Sprintf("book:%s", id))
+
+	if book.Genre != update.Genre {
+		s.cache.Delete("genres:all")
+	}
 	return book, nil
 }
 

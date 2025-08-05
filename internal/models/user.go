@@ -3,9 +3,9 @@ package models
 import "gorm.io/gorm"
 
 type User struct {
-	gorm.Model
-	Username       string `json:"username" gorm:"unique;not null"`
-	PasswordHash   string `json:"password_hash" gorm:"not null"` // Хранить хеш!
-	Role           string `json:"role" gorm:"default:user"`
-	FavouriteBooks []Book `gorm:"many2many:favourite_books;"`
+	gorm.Model     `swaggerignore:"true"`
+	Username       string `json:"username" gorm:"unique;not null" example:"john_doe"`
+	PasswordHash   string `json:"-" gorm:"not null"`
+	Role           string `json:"role" gorm:"default:user" example:"user"`
+	FavouriteBooks []Book `gorm:"many2many:user_favourites;"`
 }
