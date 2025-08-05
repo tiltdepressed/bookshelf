@@ -1,7 +1,6 @@
-package handlers_test
+package handlers
 
 import (
-	"bookshelf/internal/handlers"
 	"bookshelf/internal/service"
 	"bookshelf/pkg/utils"
 	"context"
@@ -35,7 +34,7 @@ func (m *MockFavouriteService) GetFavourites(userID uint, page, limit int) ([]se
 
 func TestFavouriteHandler_AddFavouriteHandler_Success(t *testing.T) {
 	mockService := new(MockFavouriteService)
-	handler := handlers.NewFavouriteHandler(mockService)
+	handler := NewFavouriteHandler(mockService)
 
 	// Настройка мока
 	mockService.On("AddFavourite", uint(1), uint(2)).Return(nil)
@@ -67,7 +66,7 @@ func TestFavouriteHandler_AddFavouriteHandler_Success(t *testing.T) {
 
 func TestFavouriteHandler_GetFavourites_Success(t *testing.T) {
 	mockService := new(MockFavouriteService)
-	handler := handlers.NewFavouriteHandler(mockService)
+	handler := NewFavouriteHandler(mockService)
 
 	// Настройка мока
 	briefs := []service.BookBrief{
