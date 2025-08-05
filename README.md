@@ -60,36 +60,36 @@ BookShelf - это полнофункциональный RESTful API для у�
 ### Запуск без Docker
 
 1. Установите зависимости:
-   ```bash
-   go mod download
-   ```
+```bash
+go mod download
+```
 
 2. Запустите PostgreSQL и Redis в Docker:
-   ```bash
-   docker pull postgres
-   docker run --name bookshelf-container \
-  -e POSTGRES_DB=bookshelf_db \
-  -e POSTGRES_PASSWORD='yourpassword' \
-  -p 5433:5432 \
-  -d postgres
+```bash
+docker pull postgres
+docker run --name bookshelf-container \
+-e POSTGRES_DB=bookshelf_db \
+-e POSTGRES_PASSWORD='yourpassword' \
+-p 5433:5432 \
+-d postgres
   
-  docker pull redis
-  docker run --name redis-container \  
-  -p 6379:6379 \
-  -d redis
-  ```
+docker pull redis
+docker run --name redis-container \  
+-p 6379:6379 \
+-d redis
+```
 3. Создайте .env по образцу:
-   ```bash
-   PORT="8080"
-   DSN="host=localhost user=postgres password=yourpassword dbname=bookshelf_db port=5433 sslmode=disable"
-  JWT_SECRET="JWT_SECRET"
-  REDIS_URL="redis://localhost:6379"
-  ```
+```bash
+PORT="8080"
+DSN="host=localhost user=postgres password=yourpassword dbname=bookshelf_db port=5433 sslmode=disable"
+JWT_SECRET="JWT_SECRET"
+REDIS_URL="redis://localhost:6379"
+```
 
 4. Запустите приложение:
-   ```bash
-   go run cmd/main.go
-   ```
+```bash
+go run cmd/main.go
+```
 
 ## API Endpoints
 
